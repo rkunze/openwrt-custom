@@ -86,6 +86,23 @@ int main(int argc, char *argv[])
 		pid_t child_pid = fork();
 		if (child_pid == 0) {
 			daemonized = 1;
+			int devnull = open("/dev/null");
+			if (devnull < 0) {
+				log_error("Failed to open /dev/null");
+				exit(1);
+			}
+			if (dup2(devnull, STDIN_FILENO) < 0) {
+				log_error("Failed to redirect stdin");
+				exit(1);
+			}
+			if (dup2(devnull, STDOUT_FILENO) < 0) {
+				log_error("Failed to redirect stdout");
+				exit(1);
+			}
+			if (dup2(devnull, STDERR_FILENO) < 0) {
+				log_error("Failed to redirect stderr");
+				exit(1);
+			}
 			close(pipefd[0]);
 			log_start();
 			error = autofs_run(mountpoint, source, real_mount_args, timeout, helper_cmd, pipefd[1]);
