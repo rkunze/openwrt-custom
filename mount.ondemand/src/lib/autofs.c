@@ -35,6 +35,28 @@ const char *source;
 const char *mnt_opts;
 const char *helper_cmd;
 
+void expire_trigger(int sig) {
+	int pid = fork(); 
+	if (!pid) {
+		unsigned int ioctl_arg = 0;
+		int result = ioctl(fdin, AUTOFS_IOC_EXPIRE_MULTI, &ioctl_arg);
+		if (result != 0 && (result != -1 || errno != EAGAIN)) {
+			log_error("Failed to send the expire trigger to kernel");
+		}
+		exit(0);
+	} else if (pid<0) {
+		log_error("Cannot trigger expire: Failed to fork");
+	}
+	if (verbose) {
+		log_printf("next expire trigger poll in %d seconds\n", timer_tick);
+	}
+	alarm(timer_tick);
+}
+
+void sigchld_handler(int sig) {
+	while (waitpid(-1, NULL, WNOHANG)>0) {}
+}
+
 int umount_mountpoint(void) {
 	if (fchdir(fd_mount_cwd) < 0) {
 		log_error("failed to chdir to mount working dir");
@@ -45,6 +67,7 @@ int umount_mountpoint(void) {
 		log_printf("'/bin/umount %s' failed (exit code: %d)\n", mountpoint, error);
 		return 1;
 	}
+
 	if (helper_cmd) {
 		error = system_printf("%s cleanup %s %s 2>/dev/null >/dev/null </dev/null", 
 						helper_cmd, source, mountpoint);
@@ -82,38 +105,6 @@ int mount_mountpoint(void) {
 		log_printf("'/bin/mount %s %s %s' failed (exit code: %d)\n", 
 					mnt_opts, source, mountpoint, error);
 		return 1;
-	}
-	if (timer_tick) {
-		if (verbose) {
-			log_printf("Starting expire process with timer tick %d seconds...\n", timer_tick);
-		}
-		int pid = fork(); 
-		if (!pid) {
-			struct sigaction s;
-			s.sa_handler = SIG_IGN;
-			s.sa_flags = 0;
-			sigaction(SIGINT, &s, NULL);
-			sigaction(SIGHUP, &s, NULL);
-			sigaction(SIGTERM, &s, NULL);
-			while (1) {
-				if (verbose) {
-					log_printf("next expire trigger poll in %d seconds\n", timer_tick);
-				}
-				sleep(timer_tick);
-				unsigned int ioctl_arg = 0;
-				int result = ioctl(fdin, AUTOFS_IOC_EXPIRE_MULTI, &ioctl_arg);
-				if (result == 0) {
-					if (verbose) { log_printf("sucessful expire, terminating...\n"); }
-					exit(0);
-				} else if (result != -1 || errno != EAGAIN) {
-					log_error("Failed to send the expire trigger to kernel");
-				}
-			}
-			log_printf("Dropped out of the expire trigger loop. This should not happen.\n");
-			exit(1);
-		} else if (pid<0) {
-			log_error("Failed to fork");
-		}
 	}
 	if (helper_cmd) {
 		error = system_printf("%s mounted %s %s 2>/dev/null >/dev/null </dev/null", 
@@ -191,11 +182,22 @@ static int autofs_process_request(const struct autofs_v5_packet *pkt)
 	if(pkt->hdr.type == autofs_ptype_missing_direct) {
 		if (verbose) { log_printf("kernel is requesting a mount -> %s\n", pkt->name); }
 		status = mount_mountpoint();
-		if (status == 0) { is_mounted = 1; }
+		if (status == 0) { 
+			is_mounted = 1; 
+			if (timer_tick) {
+				if (verbose) {
+					log_printf("Starting expire trigger with timer tick %d seconds...\n", timer_tick);
+				}
+				alarm(timer_tick);
+			}
+		}
 	} else if(pkt->hdr.type == autofs_ptype_expire_direct) {
 		if (verbose) { log_printf("kernel is requesting a umount -> %s\n", pkt->name); }
 		status = umount_mountpoint();
-		if (status == 0) { is_mounted = 0; }
+		if (status == 0) { 
+			is_mounted = 0; 
+			alarm(0); // No more expire triggers needed
+		}
 	} else {
 		log_printf("unsupported packet type %d\n", pkt->hdr.type);
 		return 1;
@@ -285,6 +287,13 @@ int autofs_init(int timeout)
 	sigaction(SIGINT, &s, NULL);
 	sigaction(SIGHUP, &s, NULL);
 	sigaction(SIGTERM, &s, NULL);
+	s.sa_handler = expire_trigger;
+	s.sa_flags = 0;
+	sigaction(SIGALRM, &s, NULL);
+	s.sa_handler = sigchld_handler;
+	s.sa_flags = 0;
+	sigaction(SIGCHLD, &s, NULL);
+
 
 
 	fd_mount_cwd = open(".", O_RDONLY);
@@ -344,9 +353,6 @@ int autofs_run(const char *mountpoint_in, const char *source_in, const char *mnt
 	if (error) { return error; } 
 
 	while(1) {
-		// Clean up old expire trigger processes
-		while (waitpid(-1, NULL, WNOHANG)>0) {}
-		
 		union autofs_v5_packet_union pkt;
 		if(autofs_in(&pkt)) {
 			continue;
