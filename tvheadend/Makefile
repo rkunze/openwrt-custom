@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tvheadend
-PKG_REV:=9d775da00e1f86a4159f
-PKG_VERSION:=20110507
+PKG_REV:=78213a0c32c63b9263862c12c4a731d199f2e3d9
+PKG_VERSION:=20120420
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
@@ -61,7 +61,7 @@ define Package/tvheadend/install
 	$(INSTALL_BIN) ./files/tvheadend.init $(1)/etc/init.d/tvheadend
 
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/build.Linux/tvheadend $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/build.linux/tvheadend $(1)/usr/bin/
 endef
 
 $(eval $(call BuildPackage,tvheadend))
