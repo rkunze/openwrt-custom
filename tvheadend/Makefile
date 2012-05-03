@@ -8,15 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tvheadend
-PKG_REV:=78213a0c32c63b9263862c12c4a731d199f2e3d9
-PKG_VERSION:=20120420
+PKG_REV:=HEAD
+PKG_VERSION:=current
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=$(PKG_REV)
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_REV).tar.bz2
-PKG_SOURCE_URL:=https://github.com/andoma/tvheadend.git
+PKG_SOURCE_URL:=/home/richard/Projekte/Tuxkino/tvheadend
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/nls.mk
@@ -45,6 +45,11 @@ define Package/tvheadend/config
   endmenu
 endef
 
+define Build/Compile
+	$(call Build/Compile/Default,build.linux/tvheadend.bundle)
+endef
+
+
 ifeq ($(CONFIG_TVHEADEND_AVAHI_SUPPORT),)
   CONFIGURE_ARGS+= --disable-avahi
 endif
@@ -55,13 +60,13 @@ CONFIGURE_ARGS += \
 TARGET_LDFLAGS += \
 		-Wl,-rpath-link=$(STAGING_DIR)/usr/lib \
 		-liconv
-				
+
 define Package/tvheadend/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/tvheadend.init $(1)/etc/init.d/tvheadend
 
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/build.linux/tvheadend $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/build.linux/tvheadend.bundle $(1)/usr/bin/tvheadend
 endef
 
 $(eval $(call BuildPackage,tvheadend))

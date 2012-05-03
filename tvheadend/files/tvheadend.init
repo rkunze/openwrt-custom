@@ -9,9 +9,8 @@ START=80
 
 start() {
 	logger "Starting TV Headend"
-	[ -d /media/video ] || mkdir -p /media/video
-	[ -d /etc/config/tvheadend ] || mkdir -p /etc/config/tvheadend
-	/usr/bin/tvheadend -f -c /etc/config/tvheadend
+	[ -d /etc/config/tvheadend ] || (mkdir -p /etc/config/tvheadend ; chown tvheadend:video /etc/config/tvheadend)
+	/usr/bin/tvheadend -f -u tvheadend -g video -c /etc/config/tvheadend
 }
 
 stop() {
