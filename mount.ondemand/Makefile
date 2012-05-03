@@ -49,7 +49,9 @@ endef
 
 define Package/mount.ondemand/install
 	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_DIR) $(1)/etc/init.d
 	$(CP) $(PKG_BUILD_DIR)/mount.ondemand $(1)/sbin/
+	$(INSTALL_BIN) ./files/mount-ondemand.init $(1)/etc/init.d/mount-ondemand
 endef
 
 define Build/Prepare
