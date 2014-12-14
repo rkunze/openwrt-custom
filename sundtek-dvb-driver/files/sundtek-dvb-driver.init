@@ -1,0 +1,22 @@
+#!/bin/sh /etc/rc.common
+
+START=50
+STOP=90
+
+start() {
+	logger "Starting Sundtek DVB driver"
+	/sbin/mediasrv -d --wait-for-devices
+}
+
+stop() {
+	logger "Stopping Sundtek DVB driver"
+	/bin/mediaclient --shutdown
+}
+
+restart() {
+	logger "Restarting Sundtek DVB driver"
+	stop
+	start
+}
+
+
