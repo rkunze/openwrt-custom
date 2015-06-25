@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=tvheadend
-PKG_VERSION:=3.9-2249-g920cb35
-PKG_SOURCE_VERSION:=40a2e93c8ade6b823e47cfa0b2a6264668cdd2dc
+PKG_VERSION:=4.0.5
+PKG_SOURCE_VERSION:=v4.0.5
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=https://github.com/rkunze/tvheadend.git
+PKG_SOURCE_URL:=https://github.com/tvheadend/tvheadend.git
 #PKG_SOURCE:=$(PKG_VERSION).tar.gz
 #PKG_SOURCE_URL:=https://github.com/tvheadend/tvheadend/archive/
 #PKG_MD5SUM:=86d1be0ad6e02bd2aecd3d529a026797
@@ -90,7 +90,6 @@ CONFIGURE_ARGS += \
 	--enable-bundle \
 	--disable-libav \
 	--disable-dbus_1
-	
 
 define Package/tvheadend/install
 	$(INSTALL_DIR) $(1)/etc/tvheadend
