@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=sundtek-dvb-driver
-PKG_VERSION:=20150615
+PKG_VERSION:=20150907
 PKG_RELEASE:=1
 PKG_SOURCE:=installer.tar.gz
 PKG_SOURCE_URL:=http://www.sundtek.de/media/netinst/openwrtarm4/
-PKG_MD5SUM:=c7cac96efc8b292741c33dba6d0ba602
+PKG_MD5SUM:=6ae5e12004327bb28320f349bc718fb7
 
 PKG_ROOT_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)/
 PKG_BUILD_DIR:=$(PKG_ROOT_DIR)/build
